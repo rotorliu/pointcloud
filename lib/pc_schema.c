@@ -100,6 +100,8 @@ pc_compression_name(int num)
       return "ght";
     case PC_DIMENSIONAL:
       return "dimensional";
+    case PC_LAZPERF:
+      return "laz";
     default:
       return "UNKNOWN";
   }
@@ -115,6 +117,12 @@ pc_compression_number(const char *str)
 	        (strcasecmp(str, "dimensional") == 0) )
 	{
 		return PC_DIMENSIONAL;
+	}
+
+	if ( (str[0] == 'l' || str[0] == 'L') &&
+	        (strcasecmp(str, "laz") == 0) )
+	{
+		return PC_LAZPERF;
 	}
 
 	if ( (str[0] == 'g' || str[0] == 'G') &&
@@ -402,6 +410,7 @@ pc_schema_from_xml(const char *xml_str, PCSCHEMA **schema)
 	xml_doc = xmlReadMemory(xml_ptr, xml_size, NULL, NULL, 0);
 	if ( ! xml_doc )
 	{
+		xmlCleanupParser();
 		pcwarn("unable to parse schema XML");
 		return PC_FAILURE;
 	}
@@ -416,6 +425,7 @@ pc_schema_from_xml(const char *xml_str, PCSCHEMA **schema)
 	if( ! xpath_ctx )
 	{
 		xmlFreeDoc(xml_doc);
+		xmlCleanupParser();
 		pcwarn("unable to create new XPath context to read schema XML");
 		return PC_FAILURE;
 	}
@@ -430,6 +440,7 @@ pc_schema_from_xml(const char *xml_str, PCSCHEMA **schema)
 	{
 		xmlXPathFreeContext(xpath_ctx);
 		xmlFreeDoc(xml_doc);
+		xmlCleanupParser();
 		pcwarn("unable to evaluate xpath expression \"%s\" against schema XML", xpath_str);
 		return PC_FAILURE;
 	}
@@ -455,7 +466,7 @@ pc_schema_from_xml(const char *xml_str, PCSCHEMA **schema)
 				/* These are the values of the dimension */
 				for ( child = cur->children; child; child = child->next )
 				{
-					if( child->type == XML_ELEMENT_NODE )
+					if( child->type == XML_ELEMENT_NODE && child->children != NULL)
 					{
 						char *content = (char*)(child->children->content);
 						char *name = (char*)(child->name);
@@ -509,6 +520,7 @@ pc_schema_from_xml(const char *xml_str, PCSCHEMA **schema)
 						xmlXPathFreeObject(xpath_obj);
 						xmlXPathFreeContext(xpath_ctx);
 						xmlFreeDoc(xml_doc);
+                		xmlCleanupParser();
 						pc_schema_free(s);
 						pcwarn("schema dimension at position \"%d\" is declared twice", d->position + 1, ndims);
 						return PC_FAILURE;
@@ -528,7 +540,8 @@ pc_schema_from_xml(const char *xml_str, PCSCHEMA **schema)
 					xmlXPathFreeObject(xpath_obj);
 					xmlXPathFreeContext(xpath_ctx);
 					xmlFreeDoc(xml_doc);
-					pc_schema_free(s);
+					xmlCleanupParser();
+            		pc_schema_free(s);
 					pcwarn("schema dimension states position \"%d\", but number of XML dimensions is \"%d\"", d->position + 1, ndims);
 					return PC_FAILURE;
 				}
@@ -549,6 +562,7 @@ pc_schema_from_xml(const char *xml_str, PCSCHEMA **schema)
 	{
 		xmlXPathFreeContext(xpath_ctx);
 		xmlFreeDoc(xml_doc);
+		xmlCleanupParser();
 		pcwarn("unable to evaluate xpath expression \"%s\" against schema XML", xpath_metadata_str);
 		return PC_FAILURE;
 	}
@@ -588,6 +602,7 @@ pc_schema_from_xml(const char *xml_str, PCSCHEMA **schema)
 
 	xmlXPathFreeContext(xpath_ctx);
 	xmlFreeDoc(xml_doc);
+	xmlCleanupParser();
 
 	return PC_SUCCESS;
 }
@@ -651,4 +666,3 @@ pc_schema_get_size(const PCSCHEMA *s)
 {
 	return s->size;
 }
-

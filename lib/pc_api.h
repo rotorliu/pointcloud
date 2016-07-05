@@ -36,7 +36,8 @@ enum COMPRESSIONS
 {
     PC_NONE = 0,
     PC_GHT = 1,
-    PC_DIMENSIONAL = 2
+    PC_DIMENSIONAL = 2,
+    PC_LAZPERF = 3
 };
 
 /**
@@ -196,6 +197,12 @@ typedef struct
 	uint8_t *ght;
 } PCPATCH_GHT;
 
+typedef struct
+{
+	PCPATCH_COMMON
+	size_t lazperfsize;
+	uint8_t *lazperf;
+} PCPATCH_LAZPERF;
 
 
 /* Global function signatures for memory/logging handlers. */
@@ -421,5 +428,7 @@ PCPATCH* pc_patch_filter_equal_by_name(const PCPATCH *pa, const char *name, doub
 /** Subset batch based on range condition on dimension */
 PCPATCH* pc_patch_filter_between_by_name(const PCPATCH *pa, const char *name, double val1, double val2);
 
+/** get point n */
+PCPOINT *pc_patch_pointn(const PCPATCH *patch, int n);
 
 #endif /* _PC_API_H */
